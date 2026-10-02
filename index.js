@@ -8,7 +8,12 @@ const { BullMQAdapter } = require('@bull-board/api/bullMQAdapter');
 const { ExpressAdapter } = require('@bull-board/express');
 
 // --- REDIS & QUEUE SETUP ---
-const connection = new IORedis({ maxRetriesPerRequest: null });
+// CORRECT:
+const connection = new IORedis({
+    host: process.env.REDIS_HOST || '127.0.0.1',
+    port: Number(process.env.REDIS_PORT) || 6379,
+    maxRetriesPerRequest: null,
+});
 const notificationQueue = new Queue('notifications', { connection });
 
 // --- BULLBOARD SETUP (Visualization) ---

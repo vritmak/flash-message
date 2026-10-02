@@ -3,7 +3,12 @@ const { Worker } = require('bullmq');
 const IORedis = require('ioredis');
 const pool = require('./db'); // <--- Importing your existing pool
 
-const connection = new IORedis({ maxRetriesPerRequest: null });
+// worker.js
+const connection = new IORedis({
+    host: process.env.REDIS_HOST || '127.0.0.1',
+    port: Number(process.env.REDIS_PORT) || 6379,
+    maxRetriesPerRequest: null,
+});
 
 // --- MOCK PROVIDER (10% Failure Simulation) ---
 const mockSendProvider = async (notificationId) => {

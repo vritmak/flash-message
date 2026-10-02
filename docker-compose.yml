@@ -1,0 +1,59 @@
+services:
+  # 1. PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: flash_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: flash_message
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # 2. Redis Message Broker
+  redis:
+    image: redis:7-alpine
+    container_name: flash_redis
+    ports:
+      - "6379:6379"
+
+  # 3. Main API Service
+  api:
+    build: .
+    command: node index.js
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: postgres
+      DB_USER: postgres
+      DB_PASSWORD: secretpassword
+      DB_NAME: flash_message
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - postgres
+      - redis
+
+  # 4. Background Workers (Scalable)
+  worker:
+    build: .
+    command: node worker.js
+    environment:
+      DB_HOST: postgres
+      DB_USER: postgres
+      DB_PASSWORD: secretpassword
+      DB_NAME: flash_message
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  pgdata:
