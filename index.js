@@ -8,28 +8,33 @@ const pool = require('./db');
 const { createBullBoard } = require('@bull-board/api');
 const { BullMQAdapter } = require('@bull-board/api/bullMQAdapter');
 const { ExpressAdapter } = require('@bull-board/express');
+const createRateLimiter = require('./middleware/rateLimiter');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
+// Body parser & Static file serving (for public/index.html UI)
 app.use(express.json());
-app.use(express.static('public')); // Serve simple test UI
+app.use(express.static('public'));
 
-// --- REDIS CONFIG ---
+// --- REDIS CONFIGURATION ---
 const redisConfig = {
     host: process.env.REDIS_HOST || '127.0.0.1',
     port: Number(process.env.REDIS_PORT) || 6379,
     maxRetriesPerRequest: null,
 };
 
+// Main Redis connection for BullMQ & Rate Limiter
 const connection = new IORedis(redisConfig);
-const notificationQueue = new Queue('notifications', { connection });
 
-// Dedicated Redis Subscriber client
+// Dedicated Redis connection for Pub/Sub listening
 const redisSubscriber = new IORedis(redisConfig);
 
-// --- BULLBOARD DASHBOARD ---
+// --- BULLMQ QUEUE SETUP ---
+const notificationQueue = new Queue('notifications', { connection });
+
+// --- BULLBOARD DASHBOARD SETUP (Visualization) ---
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath('/admin/queues');
 createBullBoard({
@@ -38,7 +43,14 @@ createBullBoard({
 });
 app.use('/admin/queues', serverAdapter.getRouter());
 
-// --- WEBSOCKET CLIENT MANAGEMENT ---
+// --- DISTRIBUTED RATE LIMITER ---
+// Max 5 notifications per 10-second sliding window per user/IP
+const sendRateLimiter = createRateLimiter(connection, {
+    windowInSeconds: 10,
+    maxRequests: 5,
+});
+
+// --- WEBSOCKET CONNECTION MANAGEMENT ---
 io.on('connection', (socket) => {
     console.log(`🔌 Client connected to WebSocket: ${socket.id}`);
 
@@ -69,8 +81,8 @@ redisSubscriber.on('message', (channel, message) => {
     }
 });
 
-// --- POST /send (PRODUCER) ---
-app.post('/send', async (req, res) => {
+// --- POST /send (PRODUCER WITH RATE LIMITING) ---
+app.post('/send', sendRateLimiter, async (req, res) => {
     const { userId, type, message } = req.body;
 
     try {
@@ -107,4 +119,5 @@ app.post('/send', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`🚀 Server with WebSockets running on port ${PORT}`);
+    console.log(`📊 Dashboard running on http://localhost:${PORT}/admin/queues`);
 });
