@@ -59,6 +59,7 @@ A high-throughput, fault-tolerant, distributed notification and messaging engine
                                        │   - Simulates Network Flake │
                                        │   - Publishes completion    │
                                        └─────────────────────────────┘
+```
 
 ## 🔬 Architectural Evolution (Phases 1 — 5)
 
