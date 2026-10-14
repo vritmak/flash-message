@@ -77,6 +77,7 @@ This system was not built as a static application; it was iteratively engineered
                                            │
                                            ▼
 [ Client ] ◄─── HTTP 200 OK ──────── [ UPDATE (SENT) ] ─────────────────────► [ PostgreSQL ]
+```
 
 ### Phase 2: Decoupled Asynchronicity & Fault Tolerance
 
@@ -90,6 +91,7 @@ This system was not built as a static application; it was iteratively engineered
 [ Client ] ◄─── 202 Accepted ───────────────────────────────────────              │
                                                                                   ▼
 [ PostgreSQL ] ◄─── UPDATE (SENT / RETRYING) ─── [ Mock Provider ] ◄────── [ Background Worker ]
+```
 
 ### Phase 3: Containerization & Horizontal Worker Scaling
 
@@ -110,6 +112,7 @@ This system was not built as a static application; it was iteratively engineered
 │     api-1      │ │    worker-1    │ │    worker-2     │ │    worker-3     │
 │  (Port: 3000)  │ │ (Replica Node) │ │ (Replica Node)  │ │ (Replica Node)  │
 └────────────────┘ └────────────────┘ └─────────────────┘ └─────────────────┘
+```
 
 ### Phase 4: Inter-Process Event Bus & Real-Time Push Delivery
 
@@ -127,6 +130,7 @@ This system was not built as a static application; it was iteratively engineered
                                   ┌──────────────────────┴──────────────────────┐
                                   │                                             │
                            [ worker-1 ]                   [ worker-2 ]   [ worker-3 ]
+```
 
 ### Phase 5: Distributed Edge Protection (Sliding Window Log Rate Limiter)
 
@@ -149,7 +153,7 @@ This system was not built as a static application; it was iteratively engineered
    │ Retry-After: 10       │   │ EXPIRE key 10         │
    │ X-RateLimit-Remain: 0 │   │ Continue to next()    │
    └───────────────────────┘   └───────────────────────┘
-
+```
 
 ## 🏛️ System Design Concepts Implemented
 
@@ -205,6 +209,7 @@ FlashMessage was intentionally architected to demonstrate core distributed syste
 │ Observability UI  │ BullBoard                │ Real-Time Queue Telemetry │
 │ Containerization  │ Docker & Docker Compose  │ Microservice Replication  │
 └───────────────────┴──────────────────────────┴───────────────────────────┘
+```
 
 
 ## ⚡ Quick Start Guide
@@ -224,6 +229,7 @@ Ensure you have the following installed:
 ```bash
 git clone https://github.com/<YOUR_GITHUB_USERNAME>/flash-message-backend.git
 cd flash-message-backend
+``` 
 
 ### 3. Create Environment File
 Create a .env file in the project root:
@@ -236,11 +242,13 @@ DB_NAME=flash_message
 DB_PORT=5432
 REDIS_HOST=redis
 REDIS_PORT=6379
+```
 
 ### 4. Boot the Distributed Stack (One Command)
 Run the stack with 3 horizontally scaled background workers:
 ```bash
 docker compose up -d --build --scale worker=3
+```
 
 ### 5. Access the Web Interfaces
 
